@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect } from 'react';
 
 // Define types for form status
@@ -40,6 +41,8 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting'>('idle');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     const targetDate = new Date('2025-12-01T00:00:00Z');
@@ -54,13 +57,47 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
     }
   }, []);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormStatus('submitting');
-    
-    const recipientEmail = "syncteamai@gmail.com";
-    const subject = encodeURIComponent(`SyncTeamAI Waitlist Sign-up: ${name}`);
-    const body = encodeURIComponent(
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    // IMPORTANT: Replace with your actual Formspree endpoint URL
+    const formspreeEndpoint = "https://formspree.io/f/xblpjrbb";
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('message', messageBody);
+
+    try {
+      const response = await fetch(formspreeEndpoint, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSuccessMessage("Thanks for signing up! We'll be in touch soon.");
+        setFormStatus('idle');
+        setName('');
+        setEmail('');
+        setMessageBody('');
+      } else {
+        // If the server responds with an error (e.g., 4xx, 5xx), trigger the fallback.
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Formspree submission failed, falling back to mailto:", error);
+      
+      setErrorMessage("Service is busy. Opening your email client as a backup...");
+
+      const recipientEmail = "syncteamai@gmail.com";
+      const subject = encodeURIComponent(`SyncTeamAI Waitlist Sign-up: ${name}`);
+      const body = encodeURIComponent(
 `You have a new sign-up for the SyncTeamAI waitlist.
 
 Name: ${name}
@@ -68,15 +105,17 @@ Email: ${email}
 Message:
 ${messageBody || '(No message provided)'}
 `
-    );
-
-    window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-
-    // Reset status after a moment, as we can't confirm if the email was sent.
-    setTimeout(() => {
-      setFormStatus('idle');
-    }, 1500);
+      );
+      window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
+      
+      // Reset status after a moment.
+      setTimeout(() => {
+        setFormStatus('idle');
+        setErrorMessage(''); // Clear error message after fallback
+      }, 3000);
+    }
   };
+
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -140,7 +179,7 @@ ${messageBody || '(No message provided)'}
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Opening Email...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
@@ -153,9 +192,15 @@ ${messageBody || '(No message provided)'}
             </button>
           </div>
         </form>
-        <p className="mt-4 text-xs text-slate-400 max-w-lg mx-auto">
-          This will open your default email client to send your details directly to us.
-        </p>
+         <div className="mt-4 min-h-[20px] text-xs max-w-lg mx-auto">
+          {successMessage && <p className="text-green-400">{successMessage}</p>}
+          {errorMessage && <p className="text-yellow-500">{errorMessage}</p>}
+          {!successMessage && !errorMessage && (
+             <p className="text-slate-400">
+               If our sign-up service is busy, this will open your email client as a backup.
+             </p>
+          )}
+        </div>
       </main>
       <footer className="absolute bottom-0 left-0 right-0 p-4 text-center text-slate-500 text-sm">
         <div className="flex justify-center items-center gap-6 mb-2">
