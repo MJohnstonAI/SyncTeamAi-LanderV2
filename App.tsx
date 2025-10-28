@@ -1,4 +1,5 @@
 
+
 import React, { useState, FormEvent, useEffect } from 'react';
 
 // Define types for form status
@@ -6,7 +7,7 @@ type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 type Page = 'home' | 'progress';
 
 // Base64 encoded WebP image for the background
-const backgroundImage = `data:image/webp;base64,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`;
+const backgroundImage = `data:image/webp;base64,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`;
 
 // Helper component for icons
 const StatusIcon = ({ status }: { status: FormStatus | 'done' | 'in-progress' | 'outstanding' }) => {
@@ -43,7 +44,7 @@ const StatusIcon = ({ status }: { status: FormStatus | 'done' | 'in-progress' | 
 };
 
 const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }) => {
-  const [firstName, setFirstName] = useState<string>('');
+  const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [messageBody, setMessageBody] = useState<string>('');
   const [status, setStatus] = useState<FormStatus>('idle');
@@ -69,9 +70,9 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
     setStatus('loading');
     setMessage('');
 
-    if (!firstName.trim()) {
+    if (!name.trim()) {
       setStatus('error');
-      setMessage('Please enter your first name.');
+      setMessage('Please enter your name.');
       return;
     }
 
@@ -87,19 +88,22 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
       const response = await fetch(FORM_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ firstName, email, message: messageBody })
+        body: JSON.stringify({ name, email, message: messageBody })
       });
 
       if (response.ok) {
         setStatus('success');
         setMessage("Thanks for your interest! We'll notify you at launch.");
-        setEmail(''); setFirstName(''); setMessageBody('');
+        setEmail(''); setName(''); setMessageBody('');
       } else {
-        throw new Error('Form submission failed');
+        const data = await response.json().catch(() => ({}));
+        const errorMessage = data.errors ? data.errors.map((e: { message: string }) => e.message).join(', ') : 'Something went wrong. Please try again later.';
+        setStatus('error');
+        setMessage(errorMessage);
       }
     } catch (error) {
       setStatus('error');
-      setMessage('Something went wrong. Please try again later.');
+      setMessage('A network error occurred. Please check your internet connection.');
     }
   };
 
@@ -155,7 +159,7 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
         <form onSubmit={handleSubmit} className="mt-8 max-w-lg mx-auto">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-4">
-              <input type="text" name="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Enter your first name" className="w-full px-4 py-3 text-white bg-slate-800/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" disabled={status === 'loading'} aria-label="First Name" required />
+              <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" className="w-full px-4 py-3 text-white bg-slate-800/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" disabled={status === 'loading'} aria-label="Name" required />
               <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email address" className="w-full px-4 py-3 text-white bg-slate-800/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" disabled={status === 'loading'} aria-label="Email Address" required />
             </div>
             <textarea name="message" value={messageBody} onChange={(e) => setMessageBody(e.target.value)} placeholder="Your message (optional)" rows={3} className="w-full px-4 py-3 text-white bg-slate-800/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none" disabled={status === 'loading'} aria-label="Your Message"></textarea>
