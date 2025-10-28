@@ -1,5 +1,4 @@
 
-
 import React, { useState, FormEvent, useEffect } from 'react';
 
 // Define types for form status
@@ -81,29 +80,38 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
       setMessage('Please enter a valid email address.');
       return;
     }
-
+    
+    // This updated implementation uses the FormData API, which is more robust
+    // for submitting to services like Formspree as it mimics a standard
+    // HTML form submission. This should resolve the network error and work
+    // reliably in production.
     const FORM_ENDPOINT = 'https://formspree.io/f/xblpjrbb'; 
+    const data = new FormData(event.currentTarget);
     
     try {
       const response = await fetch(FORM_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ name, email, message: messageBody })
+        body: data,
+        headers: {
+          'Accept': 'application/json'
+        },
       });
 
       if (response.ok) {
         setStatus('success');
         setMessage("Thanks for your interest! We'll notify you at launch.");
-        setEmail(''); setName(''); setMessageBody('');
+        setEmail('');
+        setName('');
+        setMessageBody('');
       } else {
-        const data = await response.json().catch(() => ({}));
-        const errorMessage = data.errors ? data.errors.map((e: { message: string }) => e.message).join(', ') : 'Something went wrong. Please try again later.';
+        const responseData = await response.json().catch(() => ({}));
+        const errorMessage = responseData.errors ? responseData.errors.map((e: { message: string }) => e.message).join(', ') : 'Something went wrong. Please try again later.';
         setStatus('error');
         setMessage(errorMessage);
       }
     } catch (error) {
       setStatus('error');
-      setMessage('A network error occurred. Please check your internet connection.');
+      setMessage('A network error occurred. Please check your internet connection and try again.');
     }
   };
 
