@@ -69,7 +69,7 @@ const HomePage: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }
       'page_title': 'HomePage'
     });
       
-    const targetDate = new Date('2025-12-01T00:00:00Z');
+    const targetDate = new Date('2026-02-01T00:00:00Z');
     const now = new Date();
     const difference = targetDate.getTime() - now.getTime();
 
